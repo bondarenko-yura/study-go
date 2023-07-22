@@ -27,7 +27,7 @@ func (c *Collector) AddFromChannel(ch chan int) {
 	}()
 }
 
-func (c *Collector) AssertHasAllInAnyOrder(t *testing.T, want ...any) {
+func (c *Collector) AssertHasOnlyInAnyOrder(t *testing.T, want ...any) {
 	c.rw.RLock()
 	defer c.rw.RUnlock()
 	if len(c.data) != len(want) {
