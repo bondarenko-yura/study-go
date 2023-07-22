@@ -2,7 +2,8 @@ package main // making package for standalone executable
 import (
 	"fmt"
 	"math"
-) // importing a package
+	"studygo/print"
+)
 
 const MONDAY, TUESDAY, WEDNESDAY, THURSDAY, FRIDAY, SATURDAY int = 1, 2, 3, 4, 5, 6
 const BEEF, TWO, C = "meat", 2, "veg"
@@ -11,16 +12,16 @@ func main() { // making an entry point
 	// printing using fmt functionality
 	fmt.Println("Hello World Go")
 
-	toConsole("Single return values: ", sum(1, 5))
+	// import print.go
+	print.ToConsole("Hello World Go")
+	print.ToConsole("Single return values: ", sum(1, 5))
 	fmt.Print("Multiple return values: ")
-	toConsole(doMath(1, 5))
-	toConsole("Constants: ", MONDAY, TUESDAY, WEDNESDAY, THURSDAY, FRIDAY, SATURDAY)
-	toConsole("Constants: ", BEEF, TWO, C)
-	toConsole("Enum: ", MALE, FEMALE, UNKNOWN)
-} // exiting the program
-
-func toConsole(v ...any) {
-	fmt.Println(v)
+	print.ToConsole(doMath(1, 5))
+	print.ToConsole("Constants: ", MONDAY, TUESDAY, WEDNESDAY, THURSDAY, FRIDAY, SATURDAY)
+	print.ToConsole("Constants: ", BEEF, TWO, C)
+	print.ToConsole("Enum: ", MALE, FEMALE, UNKNOWN)
+	print.ToConsole(KB, MB, GB, TB, PB, EB)
+	defaultVariableValues()
 }
 
 // function with return type
@@ -45,8 +46,6 @@ const (
 	TB
 	PB
 	EB
-	ZB
-	YB
 )
 
 // iota to assign values
@@ -55,3 +54,11 @@ const (
 	FEMALE  = iota
 	MALE    = iota
 )
+
+// variable declaration
+func defaultVariableValues() {
+	var number int    // Declaring  an integer variable
+	var decision bool // Declaring a boolean variable
+	var name string   // Declaring a string variable
+	print.ToConsole("Variables: ", number, decision, name == "")
+}
