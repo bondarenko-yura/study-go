@@ -1,4 +1,5 @@
 package main // making package for standalone executable
+
 import (
 	"fmt"
 	"math"
