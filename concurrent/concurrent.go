@@ -35,7 +35,7 @@ func Generator(from, to int, c *Collector) {
 	}()
 }
 
-func Cond(cnt *Counter) {
+func CondSignal(cnt *Counter) {
 	c := sync.NewCond(&sync.Mutex{})
 	queue := make([]interface{}, 0, 2)
 
@@ -57,4 +57,44 @@ func Cond(cnt *Counter) {
 		go removeFromQueue(100 * time.Millisecond)
 		c.L.Unlock()
 	}
+}
+
+func CondBroadcast(c *Collector) {
+	type Button struct {
+		clicked *sync.Cond
+	}
+	button := Button{clicked: sync.NewCond(&sync.Mutex{})}
+
+	subscribe := func(c *sync.Cond, fn func()) {
+		var goroutineRunning sync.WaitGroup
+		goroutineRunning.Add(1)
+		go func() {
+			// wait until this goroutine is running
+			goroutineRunning.Done()
+			c.L.Lock()
+			defer c.L.Unlock()
+			c.Wait()
+			fn()
+		}()
+		goroutineRunning.Wait()
+	}
+
+	var clickRegistered sync.WaitGroup
+	clickRegistered.Add(3)
+
+	subscribe(button.clicked, func() {
+		c.Add("Maximizing window")
+		clickRegistered.Done()
+	})
+	subscribe(button.clicked, func() {
+		c.Add("Displaying annoying dialog box")
+		clickRegistered.Done()
+	})
+	subscribe(button.clicked, func() {
+		c.Add("Mouse clicked")
+		clickRegistered.Done()
+	})
+
+	button.clicked.Broadcast()
+	clickRegistered.Wait()
 }
