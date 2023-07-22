@@ -98,3 +98,24 @@ func CondBroadcast(c *Collector) {
 	button.clicked.Broadcast()
 	clickRegistered.Wait()
 }
+
+func DoOnce() int {
+	var count int
+	increment := func() {
+		count++
+	}
+
+	var once sync.Once
+
+	var increments sync.WaitGroup
+	increments.Add(100)
+	for i := 0; i < 100; i++ {
+		go func() {
+			defer increments.Done()
+			once.Do(increment)
+		}()
+	}
+
+	increments.Wait()
+	return count
+}

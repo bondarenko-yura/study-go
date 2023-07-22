@@ -29,3 +29,9 @@ func TestCondBroadcast(t *testing.T) {
 	CondBroadcast(c)
 	c.AssertHasOnlyInAnyOrder(t, "Maximizing window", "Displaying annoying dialog box", "Mouse clicked")
 }
+
+func TestDoOnce(t *testing.T) {
+	if cnt := DoOnce(); cnt != 1 {
+		t.Errorf("want: 1, got: %d", cnt)
+	}
+}
