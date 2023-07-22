@@ -18,3 +18,10 @@ func (c *Counter) Get() int {
 	defer c.rw.RUnlock()
 	return c.v
 }
+
+func (c *Counter) IncrementAndGet() int {
+	c.rw.Lock()
+	defer c.rw.Unlock()
+	c.v++
+	return c.v
+}

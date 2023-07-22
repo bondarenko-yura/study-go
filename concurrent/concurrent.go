@@ -119,3 +119,60 @@ func DoOnce() int {
 	increments.Wait()
 	return count
 }
+
+type db struct {
+	id int
+}
+
+type dbPool struct {
+	cond          *sync.Cond
+	size, maxSize int
+	pool          *sync.Pool
+}
+
+func (p *dbPool) Get() *db {
+	p.cond.L.Lock()
+	defer p.cond.L.Unlock()
+	if p.size == p.maxSize {
+		p.cond.Wait()
+	}
+	p.size++
+	return p.pool.Get().(*db)
+}
+
+func (p *dbPool) Put(d *db) {
+	p.cond.L.Lock()
+	p.pool.Put(d)
+	p.size--
+	p.cond.L.Unlock()
+	p.cond.Signal()
+}
+
+func newObjectPool(maxSize int) *dbPool {
+	ids := Counter{}
+	return &dbPool{
+		maxSize: maxSize,
+		pool: &sync.Pool{
+			New: func() interface{} {
+				return &db{id: ids.IncrementAndGet()}
+			},
+		},
+		cond: sync.NewCond(&sync.Mutex{}),
+	}
+}
+
+func ObjectPool(size int, c *Collector) {
+	op := newObjectPool(size)
+	var wg sync.WaitGroup
+	for i := 0; i < 10; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			db := op.Get()
+			defer op.Put(db)
+			c.Add(db.id)
+			time.Sleep(100 * time.Millisecond)
+		}()
+	}
+	wg.Wait()
+}

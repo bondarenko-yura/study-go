@@ -48,3 +48,11 @@ func (c *Collector) AssertHasOnlyInAnyOrder(t *testing.T, want ...any) {
 		}
 	}
 }
+
+func (c *Collector) ValidateEach(validate func(v any)) {
+	c.rw.RLock()
+	defer c.rw.RUnlock()
+	for _, v := range c.data {
+		validate(v)
+	}
+}

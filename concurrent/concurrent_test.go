@@ -35,3 +35,13 @@ func TestDoOnce(t *testing.T) {
 		t.Errorf("want: 1, got: %d", cnt)
 	}
 }
+
+func TestObjectPool(t *testing.T) {
+	c := &Collector{}
+	ObjectPool(2, c)
+	c.ValidateEach(func(v any) {
+		if v.(int) != 1 && v.(int) != 2 {
+			t.Errorf("want: 1 or 2, got: %d", v.(int))
+		}
+	})
+}
