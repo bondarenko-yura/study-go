@@ -1,6 +1,8 @@
 package concurrent
 
 import (
+	"fmt"
+	"strconv"
 	"sync"
 	"time"
 )
@@ -154,6 +156,7 @@ func newObjectPool(maxSize int) *dbPool {
 		maxSize: maxSize,
 		pool: &sync.Pool{
 			New: func() interface{} {
+				time.Sleep(100 * time.Millisecond)
 				return &db{id: ids.IncrementAndGet()}
 			},
 		},
@@ -171,8 +174,35 @@ func ObjectPool(size int, c *Collector) {
 			db := op.Get()
 			defer op.Put(db)
 			c.Add(db.id)
-			time.Sleep(100 * time.Millisecond)
 		}()
 	}
 	wg.Wait()
+}
+
+func ReadWithTimeout(c *Collector) {
+	ch := make(chan int)
+	go func() {
+		time.Sleep(100 * time.Millisecond)
+		ch <- 25
+	}()
+	for {
+		select {
+		case v := <-ch:
+			c.Add(strconv.Itoa(v))
+		case <-time.After(300 * time.Millisecond):
+			c.Add("timeout")
+			return
+		}
+	}
+}
+
+func SelectWithDefault(c *Collector) {
+	start := time.Now()
+	var c1, c2 <-chan int
+	select {
+	case <-c1:
+	case <-c2:
+	default:
+		c.Add(fmt.Sprintf("In default after %v", time.Since(start)))
+	}
 }

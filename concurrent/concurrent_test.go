@@ -1,6 +1,7 @@
 package concurrent
 
 import (
+	"strings"
 	"testing"
 )
 
@@ -42,6 +43,41 @@ func TestObjectPool(t *testing.T) {
 	c.ValidateEach(func(v any) {
 		if v.(int) != 1 && v.(int) != 2 {
 			t.Errorf("want: 1 or 2, got: %d", v.(int))
+		}
+	})
+}
+
+func TestReadFromClosedChannel(t *testing.T) {
+	stream := make(chan int)
+	close(stream)
+	if v, open := <-stream; open || v != 0 {
+		t.Errorf("want: closed channel, got: %v, %v", v, open)
+	}
+}
+
+func TestWriteToClosedChannel(t *testing.T) {
+	defer func() {
+		if r := recover(); r == nil {
+			t.Errorf("Expected a panic, but no panic occurred.")
+		}
+	}()
+	stream := make(chan int)
+	close(stream)
+	stream <- 1
+}
+
+func TestReadWithTimeout(t *testing.T) {
+	c := &Collector{}
+	ReadWithTimeout(c)
+	c.AssertHasOnlyInAnyOrder(t, "25", "timeout")
+}
+
+func TestWriteWithTimeout(t *testing.T) {
+	c := &Collector{}
+	SelectWithDefault(c)
+	c.ValidateEach(func(v any) {
+		if !strings.HasPrefix(v.(string), "In default after") {
+			t.Errorf("want: In default after, got: %v", v)
 		}
 	})
 }
