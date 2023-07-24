@@ -132,7 +132,7 @@ type dbPool struct {
 	pool          *sync.Pool
 }
 
-func (p *dbPool) Get() *db {
+func (p *dbPool) get() *db {
 	p.cond.L.Lock()
 	defer p.cond.L.Unlock()
 	for p.size == p.maxSize {
@@ -144,34 +144,38 @@ func (p *dbPool) Get() *db {
 
 func (p *dbPool) Put(d *db) {
 	p.cond.L.Lock()
+	defer p.cond.L.Unlock()
 	p.pool.Put(d)
 	p.size--
-	p.cond.L.Unlock()
 	p.cond.Signal()
 }
 
 func newObjectPool(maxSize int) *dbPool {
-	ids := Counter{}
+	var mu sync.Mutex
+	ids := 0
 	return &dbPool{
 		maxSize: maxSize,
 		pool: &sync.Pool{
 			New: func() interface{} {
+				mu.Lock()
+				defer mu.Unlock()
+				ids++
 				time.Sleep(100 * time.Millisecond)
-				return &db{id: ids.IncrementAndGet()}
+				return &db{id: ids}
 			},
 		},
 		cond: sync.NewCond(&sync.Mutex{}),
 	}
 }
 
-func ObjectPool(size int, c *Collector) {
+func ObjectPool(size, load int, c *Collector) {
 	op := newObjectPool(size)
 	var wg sync.WaitGroup
-	for i := 0; i < 10; i++ {
+	for i := 0; i < load; i++ {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			db := op.Get()
+			db := op.get()
 			defer op.Put(db)
 			c.Add(db.id)
 		}()

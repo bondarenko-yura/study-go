@@ -1,6 +1,8 @@
 package concurrent
 
 import (
+	"fmt"
+	"math/rand"
 	"strings"
 	"testing"
 )
@@ -38,13 +40,20 @@ func TestDoOnce(t *testing.T) {
 }
 
 func TestObjectPool(t *testing.T) {
-	c := &Collector{}
-	ObjectPool(2, c)
-	c.ValidateEach(func(v any) {
-		if v.(int) != 1 && v.(int) != 2 {
-			t.Errorf("want: 1 or 2, got: %d", v.(int))
-		}
-	})
+	r := rand.New(rand.NewSource(777))
+	for i := 0; i < 100; i++ {
+		size := 1 + r.Intn(10)
+		load := size + r.Intn(1000)
+		t.Run(fmt.Sprintf("size %d load %d", size, load), func(t *testing.T) {
+			c := &Collector{}
+			ObjectPool(size, load, c)
+			c.ValidateEach(func(v any) {
+				if v.(int) < 1 || v.(int) > size {
+					t.Errorf("want: 1 <= v <= %d, got: %d", size, v)
+				}
+			})
+		})
+	}
 }
 
 func TestReadFromClosedChannel(t *testing.T) {
