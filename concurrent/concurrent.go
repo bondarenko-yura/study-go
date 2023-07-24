@@ -135,7 +135,7 @@ type dbPool struct {
 func (p *dbPool) Get() *db {
 	p.cond.L.Lock()
 	defer p.cond.L.Unlock()
-	if p.size == p.maxSize {
+	for p.size == p.maxSize {
 		p.cond.Wait()
 	}
 	p.size++
