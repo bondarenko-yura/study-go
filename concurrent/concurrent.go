@@ -122,6 +122,31 @@ func DoOnce() int {
 	return count
 }
 
+type dbFactory struct {
+	mu  sync.Mutex
+	ids int
+	dbs []*db
+}
+
+func (d *dbFactory) get() *db {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+	if len(d.dbs) == 0 {
+		time.Sleep(50 * time.Millisecond)
+		d.ids++
+		return &db{id: d.ids}
+	}
+	db := d.dbs[0]
+	d.dbs = d.dbs[1:]
+	return db
+}
+
+func (d *dbFactory) put(db *db) {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+	d.dbs = append(d.dbs, db)
+}
+
 type db struct {
 	id int
 }
@@ -129,7 +154,7 @@ type db struct {
 type dbPool struct {
 	cond          *sync.Cond
 	size, maxSize int
-	pool          *sync.Pool
+	pool          *dbFactory
 }
 
 func (p *dbPool) get() *db {
@@ -139,32 +164,22 @@ func (p *dbPool) get() *db {
 		p.cond.Wait()
 	}
 	p.size++
-	return p.pool.Get().(*db)
+	return p.pool.get()
 }
 
 func (p *dbPool) Put(d *db) {
 	p.cond.L.Lock()
 	defer p.cond.L.Unlock()
-	p.pool.Put(d)
+	p.pool.put(d)
 	p.size--
 	p.cond.Signal()
 }
 
 func newObjectPool(maxSize int) *dbPool {
-	var mu sync.Mutex
-	ids := 0
 	return &dbPool{
 		maxSize: maxSize,
-		pool: &sync.Pool{
-			New: func() interface{} {
-				mu.Lock()
-				defer mu.Unlock()
-				ids++
-				time.Sleep(100 * time.Millisecond)
-				return &db{id: ids}
-			},
-		},
-		cond: sync.NewCond(&sync.Mutex{}),
+		pool:    &dbFactory{},
+		cond:    sync.NewCond(&sync.Mutex{}),
 	}
 }
 
