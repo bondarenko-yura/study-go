@@ -225,3 +225,57 @@ func SelectWithDefault(c *Collector) {
 		c.Add(fmt.Sprintf("In default after %v", time.Since(start)))
 	}
 }
+
+func ExecuteWithWorkers(workQueue []string, c *Collector) {
+	// define channels
+	work := make(chan string, 10)
+	workWait := sync.WaitGroup{}
+	result := make(chan string)
+	resultWait := make(chan bool)
+
+	// start workers
+	for i := 0; i < 3; i++ {
+		workWait.Add(1)
+		go func(wID int) {
+			defer workWait.Done()
+			for {
+				select {
+				case w, ok := <-work:
+					if !ok {
+						return
+					}
+					fmt.Printf("Processing work: %s, %d\n", w, wID)
+					result <- w + ".done"
+					time.Sleep(2000 * time.Millisecond) // simulate processing
+				case <-time.After(1000 * time.Millisecond): // receive from work channel timeout
+					fmt.Printf("Shutting down worker: %d\n", wID)
+					return
+				}
+			}
+		}(i)
+	}
+	// results collector
+	go func() {
+		for r := range result {
+			fmt.Printf("Collecting result: %s\n", r)
+			c.Add(r)
+		}
+		resultWait <- true
+		close(resultWait)
+	}()
+
+	// send work to workers
+	go func() {
+		for _, w := range workQueue {
+			time.Sleep(400 * time.Millisecond) // simulate work generation
+			fmt.Printf("Sending work to workers: %s\n", w)
+			work <- w
+		}
+		close(work)
+	}()
+
+	// wait for all workers to finish
+	workWait.Wait()
+	close(result)
+	<-resultWait
+}

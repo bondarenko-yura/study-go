@@ -90,3 +90,10 @@ func TestWriteWithTimeout(t *testing.T) {
 		}
 	})
 }
+
+func TestExecuteWithWorkers(t *testing.T) {
+	c := &Collector{}
+	queue := []string{"a", "b", "c", "d", "e", "f", "g", "h", "i", "j"}
+	ExecuteWithWorkers(queue, c)
+	c.AssertHasOnlyInAnyOrder(t, "a.done", "b.done", "c.done", "d.done", "e.done", "f.done", "g.done", "h.done", "i.done", "j.done")
+}
