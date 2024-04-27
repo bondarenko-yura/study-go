@@ -97,3 +97,11 @@ func TestExecuteWithWorkers(t *testing.T) {
 	ExecuteWithWorkers(queue, c)
 	c.AssertHasOnlyInAnyOrder(t, "a.done", "b.done", "c.done", "d.done", "e.done", "f.done", "g.done", "h.done", "i.done", "j.done")
 }
+
+func TestCandy(t *testing.T) {
+	got := candy([]int{1, 0, 2})
+	want := 5
+	if got != want {
+		t.Errorf("want: %d, got: %d", want, got)
+	}
+}

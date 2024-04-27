@@ -2,6 +2,7 @@ package concurrent
 
 import (
 	"fmt"
+	"sort"
 	"strconv"
 	"sync"
 	"time"
@@ -279,3 +280,38 @@ func ExecuteWithWorkers(workQueue []string, c *Collector) {
 	close(result)
 	<-resultWait
 }
+
+func candy(ratings []int) int {
+	rt := make([][]int, len(ratings))
+	for i, r := range ratings {
+		rt[i] = []int{i, r}
+	}
+	sort.Slice(rt, func(i, j int) bool {
+		return rt[i][1] < rt[j][1]
+	})
+	cnd := make([]int, len(ratings))
+	for i := 0; i < len(rt); i++ {
+		idx, cur := rt[i][0], rt[i][1]
+		prevR, prevC := 0, 0
+		if idx > 0 {
+			prevR, prevC = ratings[idx-1], cnd[idx-1]
+		}
+		nextR, nextC := 0, 0
+		if idx < len(ratings)-1 {
+			nextR, nextC = ratings[idx+1], cnd[idx+1]
+		}
+		maxR := max(prevR, nextR)
+		maxC := max(prevC, nextC)
+		cnd[idx] = max(maxC, 1)
+		if cur > maxR {
+			cnd[idx]++
+		}
+	}
+	ans := 0
+	for i := 0; i < len(cnd); i++ {
+		ans += cnd[i]
+	}
+	return ans
+}
+
+///Users/yuriibondarenko/Sdk/Go/go1.20.1/bin:/usr/local/opt/python/libexec/bin:/usr/local/sbin:/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin:/System/Cryptexes/App/usr/bin:/usr/bin:/bin:/usr/sbin:/sbin:/Applications/VMware Fusion.app/Contents/Public:/usr/local/go/bin:/opt/X11/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/local/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/appleinternal/bin:/usr/local/bin
